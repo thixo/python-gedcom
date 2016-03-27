@@ -24,10 +24,13 @@
 # This code based on work from Zappala, 2005.
 # To contact the Zappala, see http://faculty.cs.byu.edu/~zappala
 
-__all__ = ["Gedcom", "Element", "PlaceElement", "GedcomParseError"]
+__all__ = ["GazetteerEntry", "Gedcom", "Element", "PlaceElement", "GedcomParseError"]
 
 # Global imports
 import re
+import collections
+
+GazetteerEntry = collections.namedtuple('GazetteerEntry', 'name county easting northing')
 
 class Gedcom:
     """Parses and manipulates GEDCOM 5.5 format data
@@ -722,9 +725,16 @@ class PlaceElement(Element):
         """ Initialize an element.  
         """
         super(PlaceElement, self).__init__(level,pointer,tag,value)
-        self.__mutable_value = value
-        self.__geo = None
-        self.__index = None
+        val, sep, geo = value.partition('|')
+        if sep:
+            split = geo.split(sep='*', maxsplit=4)
+            self.__geo = (GazetteerEntry(*split),)
+            self.__index = 0
+            self.__mutable_value = val
+        else:
+            self.__geo = None
+            self.__index = None
+            self.__mutable_value = value
 
     def is_updated(self):
         """ Check if this element has been set from gazetteer """
@@ -764,8 +774,8 @@ class PlaceElement(Element):
 
     def geo_indexed(self):
         """ Get the indexed gazetteer entry or only entry """
-        if self.__index:
-            return self.__geo[__index]
+        if self.__index != None:
+            return self.__geo[self.__index]
         elif self.__geo and len(self.__geo) == 1:
             return self.__geo[0]
         else:
