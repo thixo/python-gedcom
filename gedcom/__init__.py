@@ -24,7 +24,7 @@
 # This code based on work from Zappala, 2005.
 # To contact the Zappala, see http://faculty.cs.byu.edu/~zappala
 
-__all__ = ["Gedcom", "Element", "GedcomParseError"]
+__all__ = ["Gedcom", "Element", "PlaceElement", "GedcomParseError"]
 
 # Global imports
 import re
@@ -114,7 +114,10 @@ class Gedcom:
             raise SyntaxError(errmsg)
 
         # Create element. Store in list and dict, create children and parents.
-        element = Element(level, pointer, tag, value)
+        if tag == 'PLAC':
+        	element = PlaceElement(level, pointer, tag, value)
+        else:
+        	element = Element(level, pointer, tag, value)
         self.__element_list.append(element)
         if pointer != '':
             self.__element_dict[pointer] = element
@@ -697,4 +700,82 @@ class Element:
         result += ' ' + self.tag()
         if self.value() != "":
             result += ' ' + self.value()
+        return result
+
+class PlaceElementError(Exception):
+    """ Exception raised when we try to update a PlaceElement twice
+    """
+    
+    def __init__(self, value):
+        self.value = value
+        
+    def __str__(self):
+        return repr(self.value)
+
+class PlaceElement(Element):
+    """ Gedcom place element
+    Adds a mutable value to Elements with the 'PLAC' tag
+    Associate with a tuple Gazetteer entries to Elements with the 'PLAC' tag
+    """
+
+    def __init__(self,level,pointer,tag,value):
+        """ Initialize an element.  
+        """
+        super(PlaceElement, self).__init__(level,pointer,tag,value)
+        self.__mutable_value = value
+        self.__geo = None
+        self.__index = None
+
+    def is_updated(self):
+        """ Check if this element has been set from gazetteer """
+        return "*" in self.__mutable_value
+
+    def value(self):
+        """ Return the mutable value of this element """
+        return self.__mutable_value
+
+    def set_value(self, newValue):
+        """ Set the mutable value of this element if updated with initial mapping 
+        (e.g. "Bp Auckland" to "Bishop Auckland") 
+        """
+        if self.is_updated():
+        	raise PlaceElementError("Value already updated with initial mapping")
+        else:
+	        self.__mutable_value = newValue
+
+    def geo(self):
+        """ Return the gazetteer entry or entries for this element """
+        return self.__geo
+
+    def set_geo(self, entries):
+        """ Return the gazetteer entry or entries for this element """
+        if self.__geo:
+            raise PlaceElementError("Already updated with gazetteer information")
+        else:
+            self.__geo = entries
+
+    def index(self):
+        """ Check if this element has been indexed """
+        return __index
+
+    def set_index(self, index):
+        """ Update the index """
+        self.__index = index
+
+    def geo_indexed(self):
+        """ Get the indexed gazetteer entry or only entry """
+        if self.__index:
+            return self.__geo[__index]
+        elif self.__geo and len(self.__geo) == 1:
+            return self.__geo[0]
+        else:
+            return None
+
+    def __str__(self):
+        """ Format this element as its original string, plus geo reference info """
+        result = super().__str__()
+        entry = self.geo_indexed()
+        if entry:
+            result += '|' + entry.name + '*' + entry.county + '*' + entry.easting + "*" + entry.northing
+
         return result
