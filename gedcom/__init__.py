@@ -70,7 +70,7 @@ class Gedcom:
 
     def __parse(self, filepath):
         """Open and parse file path as GEDCOM 5.5 formatted data."""
-        gedcom_file = open(filepath, 'rU')
+        gedcom_file = open(filepath, 'rU', encoding='UTF8')
         line_num = 1
         last_elem = self.__element_top
         for line in gedcom_file:
@@ -152,7 +152,7 @@ class Gedcom:
                         if marrdata.tag() == "DATE":
                             date = marrdata.value()
                         if marrdata.tag() == "PLAC":
-                            place = marrdata.value()
+                            place = (marrdata.value(), marrdata.geo())
                         marriages.append((date, place))
         return marriages
 
@@ -560,7 +560,7 @@ class Element:
                     if c.tag() == "DATE":
                         date = c.value()
                     if c.tag() == "PLAC":
-                        place = c.value()
+                        place = (c.value(), c.geo())
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
         return (date,place,source)
@@ -596,7 +596,7 @@ class Element:
                     if c.tag() == "DATE":
                         date = c.value()
                     if c.tag() == "PLAC":
-                        place = c.value()
+                        place = (c.value(), c.geo())
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
         return (date,place,source)
@@ -632,7 +632,7 @@ class Element:
                     if c.tag() == "DATE":
                         date = c.value()
                     if c.tag() == "PLAC":
-                        place = c.value()
+                        place = (c.value(), c.geo())
                     if c.tag() == "SOUR":
                         source = source + (c.value(),)
         return (date,place,source)
@@ -651,7 +651,7 @@ class Element:
                     if indivdata.tag() == "DATE":
                         date = indivdata.value()
                     if indivdata.tag() == "PLAC":
-                        place = indivdata.value()
+                        place = (indivdata.value(), indivdata.geo())
                     if indivdata.tag() == "SOUR":
                         source = source + (indivdata.value(),)
                 census.append((date, place, source))
